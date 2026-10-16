@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brake Adjustment Trainer</title>
+<style>
+:root{--bg:#10161e;--panel:#18212c;--card:#202b38;--line:#2e3b4b;--text:#e8edf2;--muted:#93a1b1;--accent:#ffc629;--good:#3ecf7a;--bad:#ff5a5a;--blue:#4aa3ff;--orange:#ff9f40}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0b1016;border-bottom:1px solid var(--line)}
+header h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header h1 span{color:var(--accent)}
+#score{font-weight:700;color:var(--accent);font-size:14px}
+.btn{background:var(--accent);color:#111;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);width:auto;margin:0;padding:8px 12px;font-weight:600}
+.hbtn{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.screen{flex:1;min-height:0;display:none}
+.screen.on{display:flex}
+#menu{flex-direction:column;align-items:center;overflow:auto;padding:28px 16px}
+#menu h2{margin:0 0 4px;font-size:26px;text-align:center}
+#menu .sub{color:var(--muted);margin:0 0 22px;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:920px;width:100%}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;text-align:left;color:inherit;font:inherit;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card .ic{font-size:28px}
+.card h3{margin:8px 0 6px;font-size:17px}
+.card p{margin:0;color:var(--muted);font-size:14px;line-height:1.4}
+.foot{color:var(--muted);font-size:12px;margin-top:26px;text-align:center;max-width:600px;line-height:1.5}
+#learn{overflow:auto;justify-content:center;padding:20px 16px}
+.learn{max-width:760px;width:100%;line-height:1.55}
+.learn h2{color:var(--accent);font-size:19px;margin:22px 0 6px}
+.learn table{border-collapse:collapse;width:100%;max-width:440px;margin:8px 0}
+.learn td,.learn th{border:1px solid var(--line);padding:7px 10px;text-align:left}
+.learn th{background:var(--card)}
+.note{background:var(--card);border-left:4px solid var(--accent);padding:10px 12px;border-radius:6px;color:var(--muted);font-size:14px;margin-top:22px}
+.muted{color:var(--muted)}
+#sim{flex-direction:row}
+#view{position:relative;flex:1;min-width:0;overflow:hidden}
+#c{display:block;width:100%;height:100%;touch-action:none}
+#panel{width:370px;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:16px}
+#panel h2{margin:0 0 6px;font-size:18px}
+#panel p{margin:6px 0}
+#hud{position:absolute;left:10px;top:10px;background:rgba(10,15,22,.82);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;max-width:250px}
+#hud .psi{display:flex;justify-content:space-between;font-size:13px}
+#hud .psi b{color:var(--accent)}
+.bar{height:6px;background:#2b3644;border-radius:4px;margin:5px 0 7px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent)}
+.chip{display:inline-block;margin:2px 3px 2px 0;padding:2px 7px;border-radius:20px;background:#253141;color:var(--muted)}
+.chip.on{background:#1f3b2c;color:#bdf2cf}
+.chip b{color:inherit}
+#views{position:absolute;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#views button{background:rgba(10,15,22,.82);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+#tip{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:rgba(255,255,255,.45);font-size:12px;pointer-events:none}
+#toast{position:absolute;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);background:#0b1016;border:1px solid var(--line);border-left:5px solid var(--accent);padding:10px 14px;border-radius:10px;max-width:min(90%,460px);font-size:14px;opacity:0;transition:.25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.bad{border-left-color:var(--bad)}
+#toast.good{border-left-color:var(--good)}
+.steps{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.step{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;font:inherit;font-size:14px;cursor:pointer}
+.step:hover:not(:disabled){border-color:var(--accent)}
+.step.done{background:#1c3327;border-color:#2e6146;color:#bdf2cf;cursor:default}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.q p{margin:0 0 8px!important;font-weight:600}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.opt{background:#2a3747;color:var(--text);border:1px solid transparent;border-radius:9px;padding:10px;font:inherit;font-size:14px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:#1f5a39;border-color:var(--good)}
+.opt.wrong{background:#5a2323;border-color:var(--bad)}
+.opt.pick{border-color:var(--accent);background:#3d3a1c}
+.opt:disabled{cursor:default}
+.verdict{border-radius:12px;padding:12px;margin:10px 0;font-size:14px;line-height:1.45}
+.verdict.good{background:#173326;border:1px solid #2e6146}
+.verdict.bad{background:#3a1b1b;border:1px solid #6b2e2e}
+.verdict b{font-size:15px}
+.truck{display:flex;flex-direction:column;gap:6px;margin:10px 0;align-items:center}
+.axle{display:grid;grid-template-columns:1fr 70px 1fr;gap:6px;width:100%;max-width:330px;align-items:center}
+.beam{height:28px;background:#2b3644;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+.gap{height:6px}
+.wheel{background:#2a3747;color:var(--text);border:2px solid transparent;border-radius:8px;padding:7px 4px;font:inherit;font-size:12px;cursor:pointer}
+.wheel.ain{background:#1d3a5a}
+.wheel.aout{background:#5a3b14}
+.wheel.ok{background:#1f5a39}
+.wheel.miss{background:#5a2323}
+.wheel.sel{border-color:var(--accent)}
+.res{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.res td,.res th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.ctrls .full{grid-column:1/-1}
+.clear{margin:10px 0;font-size:13px}
+.clear .bar{height:10px}
+.clear .bar i{background:var(--blue)}
+details{background:var(--card);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:14px}
+details summary{cursor:pointer;color:var(--accent);font-weight:600}
+details ol{margin:8px 0 2px;padding-left:20px}
+@media(max-width:800px){#sim{flex-direction:column}#view{flex:none;height:46vh}#panel{width:auto;flex:1;border-left:0;border-top:1px solid var(--line)}#hud{max-width:190px;font-size:11px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <button class="hbtn" id="back" style="display:none">◀ Menu</button>
+  <h1 id="title"><span>Brake</span> Adjustment Trainer</h1>
+  <span id="score"></span>
+  <button class="hbtn" id="unit">Units: in</button>
+</header>
+
+<div id="menu" class="screen on">
+  <h2>🛞 Brake Adjustment Trainer</h2>
+  <p class="sub">Measure pushrod stroke, know the limits, and make the call.</p>
+  <div class="cards">
+    <button class="card" data-go="learn"><div class="ic">📘</div><h3>Learn the Rules</h3><p>Chamber sizes, adjustment limits, and how to measure and adjust.</p></button>
+    <button class="card" data-go="measure"><div class="ic">📏</div><h3>Measure a Brake</h3><p>Follow the procedure, read the stroke, and decide if it's in adjustment.</p></button>
+    <button class="card" data-go="vehicle"><div class="ic">🚛</div><h3>Full Truck Check</h3><p>Check all 10 brakes on a tractor-trailer and find the ones out of adjustment.</p></button>
+    <button class="card" data-go="adjust"><div class="ic">🔧</div><h3>Adjust a Manual Slack</h3><p>Take up the slack, back it off, lock it, and re-check the stroke.</p></button>
+  </div>
+  <p class="foot">Gamache Apps · Educational learning aid. Always follow the BC Air Brake Manual, your instructor, and the equipment manufacturer.</p>
+</div>
+
+<div id="learn" class="screen"></div>
+
+<div id="sim" class="screen">
+  <div id="view">
+    <canvas id="c"></canvas>
+    <div id="hud"><div class="psi"><span>Air pressure</span><b id="hPsi">0 psi</b></div><div class="bar"><i id="hBar"></i></div><div id="hChips"></div></div>
+    <div id="views"><button data-view="home">Whole brake</button><button data-view="tag">Tag</button><button data-view="measure">Ruler</button><button data-view="slack">Slack</button></div>
+    <div id="tip">Drag to look around · Scroll or pinch to zoom</div>
+    <div id="toast"></div>
+  </div>
+  <aside id="panel"></aside>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+let unit='in';try{unit=localStorage.getItem('bat_unit')||'in'}catch(e){}
+
+const TYPES={
+ '12':{limit:1.375,diam:5.8},
+ '16':{limit:1.75,diam:6.4},
+ '20':{limit:1.75,diam:6.9},
+ '24':{limit:1.75,diam:7.3},
+ '24LS':{limit:2.0,diam:7.3},
+ '30':{limit:2.0,diam:8.2},
+ '30LS':{limit:2.5,diam:8.2},
+ '36':{limit:2.25,diam:9.0}
+};
+const typeLabel=k=>'Type '+k.replace('LS',' Long Stroke');
+function frac(x){const s=Math.round(x*16);const w=Math.floor(s/16);let n=s%16,d=16;while(n&&n%2===0){n/=2;d/=2;}if(!n)return w+'"';return (w?w+'-':'')+n+'/'+d+'"';}
+const len=x=>unit==='mm'?Math.round(x*25.4)+' mm':frac(x);
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function randStroke(limit,out){let s;do{const off=(Math.floor(Math.random()*12)+1)/16;s=out?limit+off:limit-off-Math.random()*0.5;s=Math.round(s*16)/16;}while(s<0.75||(!out&&s>=limit)||(out&&s<=limit));return s;}
+
+const S={mode:null,phase:'proc',done:{},order:[],mistakes:0,score:{right:0,total:0},air:40,airTarget:40,engine:true,park:true,chocks:false,applied:false,s:0,targetS:0,markOn:false,rulerOn:false,brake:null,q:null,veh:null,sel:0,goAns:null,adj:null};
+
+const PROC=[
+ {id:'chock',label:'Chock the wheels',req:[]},
+ {id:'air',label:'Build air pressure to 90–100 psi',req:['chock']},
+ {id:'engine',label:'Shut off the engine',req:['air']},
+ {id:'park',label:'Release the parking brakes',req:['air']},
+ {id:'mark',label:'Mark the pushrod at the chamber face',req:['engine','park']},
+ {id:'apply',label:'Make and hold a full brake application',req:['mark']},
+ {id:'measure',label:'Measure from the chamber face to the mark',req:['apply']}
+];
+const WHY={
+ 'air:chock':'Chock the wheels first — you are about to release the parking brakes.',
+ 'engine:air':'Build air pressure to 90–100 psi before shutting the engine off.',
+ 'park:air':'Spring brakes need air pressure to release. Build air first.',
+ 'park:chock':'Chock the wheels before releasing the parking brakes.',
+ 'mark:park':'Release the parking brakes first. With the spring brakes applied the pushrod is already pushed out, so your mark would be in the wrong spot.',
+ 'mark:engine':'Shut the engine off first.',
+ 'mark:air':'Build air pressure first.',
+ 'mark:chock':'Chock the wheels first.',
+ 'apply:mark':'Mark the pushrod first, or there is nothing to measure to.',
+ 'measure:apply':'The stroke is measured with the brakes fully applied. Make the application first.'
+};
+
+/* ---------- THREE ---------- */
+let renderer,scene,camera,controls,brakeG=null,R={},rulerMesh,camGoal=null;
+const clock=new THREE.Clock();
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const VIEWS={home:{p:V(7,4,23),t:V(1,-2,0)},measure:{p:V(1.9,1.05,5.4),t:V(1.75,0.45,0)},tag:{p:V(-1.6,5.6,6.5),t:V(-2,5,0)},slack:{p:V(9,-1,10),t:V(4.8,-4,0)}};
+function go(v){camGoal={p:VIEWS[v].p.clone(),t:VIEWS[v].t.clone()};}
+function mat(c,m,r){return new THREE.MeshStandardMaterial({color:c,metalness:m==null?0.3:m,roughness:r==null?0.6:r});}
+function cylX(rFace,rBack,l,x0,m,seg){const g=new THREE.CylinderGeometry(rFace,rBack,l,seg||40);g.rotateZ(-Math.PI/2);g.translate(x0+l/2,0,0);return new THREE.Mesh(g,m);}
+function cylZ(r,l,zc,m,seg){const g=new THREE.CylinderGeometry(r,r,l,seg||32);g.rotateX(Math.PI/2);g.translate(0,0,zc);return new THREE.Mesh(g,m);}
+
+function initThree(){
+ const canvas=$('#c');
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+ renderer.outputEncoding=THREE.sRGBEncoding;
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x1a2330);scene.fog=new THREE.Fog(0x1a2330,45,110);
+ camera=new THREE.PerspectiveCamera(40,1,0.1,300);camera.position.copy(VIEWS.home.p);
+ controls=new THREE.OrbitControls(camera,canvas);controls.target.copy(VIEWS.home.t);controls.enableDamping=true;controls.minDistance=2.5;controls.maxDistance=50;
+ controls.addEventListener('start',()=>{camGoal=null;});
+ scene.add(new THREE.HemisphereLight(0xdfe8ff,0x2a2f36,0.75));
+ const d=new THREE.DirectionalLight(0xffffff,0.95);d.position.set(8,14,12);scene.add(d);
+ const d2=new THREE.DirectionalLight(0x99aaff,0.35);d2.position.set(-10,4,-8);scene.add(d2);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),mat(0x2a3038,0,0.95));floor.rotation.x=-Math.PI/2;floor.position.y=-30.5;scene.add(floor);
+ rulerMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));scene.add(rulerMesh);makeRuler();
+ new ResizeObserver(resize).observe($('#view'));resize();loop();
+}
+function resize(){if(!renderer)return;const v=$('#view');const w=v.clientWidth,h=v.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+
+function makeRuler(){
+ const L=unit==='mm'?100/25.4:4,W=2048,H=320;
+ const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+ x.fillStyle='#f4c430';x.fillRect(0,0,W,H);x.fillStyle='#111';x.textAlign='center';
+ if(unit==='mm'){const pp=W/100;for(let i=0;i<=100;i++){const h=i%10===0?0.55:i%5===0?0.38:0.22,w=i%10===0?5:3;const px=Math.max(0,Math.min(i*pp-w/2,W-w));x.fillRect(px,H*(1-h),w,H*h);if(i%10===0&&i>0&&i<100){x.font='bold 64px Arial';x.fillText(String(i),i*pp,92);}}}
+ else{const pp=W/64;for(let i=0;i<=64;i++){const h=i%16===0?0.6:i%8===0?0.45:i%4===0?0.34:i%2===0?0.25:0.16,w=i%16===0?6:i%4===0?4:3;const px=Math.max(0,Math.min(i*pp-w/2,W-w));x.fillRect(px,H*(1-h),w,H*h);if(i%16===0&&i>0&&i<64){x.font='bold 72px Arial';x.fillText(String(i/16),i*pp,95);}}}
+ x.font='bold 40px Arial';x.textAlign='left';x.fillText(unit==='mm'?'mm':'in',14,52);
+ const tex=new THREE.CanvasTexture(cv);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+ if(rulerMesh.material.map)rulerMesh.material.map.dispose();
+ rulerMesh.material.map=tex;rulerMesh.material.needsUpdate=true;
+ rulerMesh.geometry.dispose();const g=new THREE.PlaneGeometry(L,0.9);g.translate(L/2,0,0);rulerMesh.geometry=g;
+ rulerMesh.position.set(0,0.78,0.34);
+}
+
+function tagTexture(k){
+ const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');
+ x.fillStyle='#d9dde2';x.fillRect(0,0,512,256);x.strokeStyle='#555';x.lineWidth=10;x.strokeRect(5,5,502,246);
+ x.fillStyle='#111';x.textAlign='center';x.font='bold 108px Arial';x.fillText('TYPE '+k.replace('LS',''),256,k.includes('LS')?130:165);
+ if(k.includes('LS')){x.font='bold 54px Arial';x.fillText('LONG STROKE',256,212);}
+ const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
+}
+
+function buildBrake(k,slack,spring){
+ if(brakeG){scene.remove(brakeG);brakeG.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material.map)o.material.map.dispose();});}
+ brakeG=new THREE.Group();scene.add(brakeG);R={};
+ const r=TYPES[k].diam/2;
+ const black=mat(0x1d1f22,0.35,0.55),steel=mat(0xb8bec6,0.85,0.3),dark=mat(0x3a3f46,0.6,0.5),rust=mat(0x6b4a36,0.4,0.8),rubber=mat(0x111214,0,0.9);
+ brakeG.add(cylX(r*0.62,r,2.0,-2.0,black));
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.2,12,48),steel);ring.rotation.y=Math.PI/2;ring.position.x=-2;brakeG.add(ring);
+ brakeG.add(cylX(r,r*0.86,1.6,-3.6,black));
+ const port=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.9,16),steel);port.position.set(-2.9,r*0.86+0.3,0);brakeG.add(port);
+ if(spring){
+  brakeG.add(cylX(r*0.86,r*0.9,4.6,-8.2,black));brakeG.add(cylX(r*0.9,r*0.72,0.6,-8.8,black));brakeG.add(cylX(0.45,0.45,1.2,-10.0,dark,16));
+  const ring2=new THREE.Mesh(new THREE.TorusGeometry(r*0.87,0.16,10,48),steel);ring2.rotation.y=Math.PI/2;ring2.position.x=-3.6;brakeG.add(ring2);
+  const p2=port.clone();p2.position.set(-5.6,r*0.9+0.3,0);brakeG.add(p2);
+ }
+ [-1,1].forEach(sg=>{const st=cylX(0.22,0.22,0.6,0,steel,12);st.position.y=sg*r*0.38;brakeG.add(st);const nut=cylX(0.4,0.4,0.3,0.2,steel,6);nut.position.y=sg*r*0.38;brakeG.add(nut);});
+ const tag=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.2),new THREE.MeshBasicMaterial({map:tagTexture(k),side:THREE.DoubleSide}));tag.position.set(-2,r+1.15,0.2);brakeG.add(tag);
+ const wire=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6,6),steel);wire.position.set(-2,r+0.35,0.2);brakeG.add(wire);
+ // pushrod
+ const rod=new THREE.Group();brakeG.add(rod);R.rod=rod;
+ rod.add(cylX(0.28,0.28,5.6,-3,steel,20));
+ const mark=cylX(0.31,0.31,0.06,-0.03,new THREE.MeshBasicMaterial({color:0xffffff}),24);rod.add(mark);R.mark=mark;
+ rod.add(cylX(0.45,0.45,0.3,2.4,steel,6));
+ const clev=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.75,0.95),dark);clev.position.set(3.4,0,0);rod.add(clev);
+ const pin=cylZ(0.18,1.5,0,steel,12);pin.position.x=3.8;rod.add(pin);
+ // slack adjuster
+ const P=V(4.8,-6,0);R.P=P;
+ const sMat=mat(slack==='manual'?0x4a4f57:0x5a5248,0.5,0.5);
+ const sg=new THREE.Group();sg.position.copy(P);brakeG.add(sg);
+ sg.add(cylZ(1.15,1.4,0,sMat));
+ const ap=new THREE.Group();sg.add(ap);R.armPivot=ap;
+ const ag=new THREE.BoxGeometry(0.8,1,0.55);ag.translate(0,0.5,0);const arm=new THREE.Mesh(ag,sMat);ap.add(arm);R.arm=arm;
+ const body=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,1.2),sMat);body.position.set(0,1.2,0);ap.add(body);
+ const bg=new THREE.CylinderGeometry(0.33,0.33,0.6,6);bg.rotateZ(-Math.PI/2);const bolt=new THREE.Mesh(bg,steel);bolt.position.set(1.15,1.2,0);ap.add(bolt);R.bolt=bolt;
+ if(slack==='manual'){const sl=new THREE.CylinderGeometry(0.46,0.46,0.3,20);sl.rotateZ(-Math.PI/2);const sleeve=new THREE.Mesh(sl,mat(0x9aa3ad,0.8,0.35));sleeve.position.set(0.92,1.2,0);ap.add(sleeve);R.sleeve=sleeve;}
+ else{const ctrl=new THREE.Mesh(new THREE.BoxGeometry(0.25,3,0.2),dark);ctrl.position.set(-1.2,0.9,0.75);ctrl.rotation.z=0.5;sg.add(ctrl);}
+ const cam=cylZ(0.5,8.1,-3.35,steel);cam.position.set(P.x,P.y,0);brakeG.add(cam);
+ // drum, wheel, axle, bracket
+ const DC=V(P.x+3,P.y-4,0);
+ const drum=cylZ(8.5,7,-11,rust,48);drum.position.set(DC.x,DC.y,0);brakeG.add(drum);
+ const shield=cylZ(8.7,0.15,-7.45,dark,48);shield.position.set(DC.x,DC.y,0);brakeG.add(shield);
+ const tire=new THREE.Mesh(new THREE.TorusGeometry(15,5.2,18,56),rubber);tire.position.set(DC.x,DC.y,-13.5);brakeG.add(tire);
+ const rim=cylZ(10.6,7.5,-13.5,steel,48);rim.position.set(DC.x,DC.y,0);brakeG.add(rim);
+ const axle=cylZ(2.2,20,2.5,dark);axle.position.set(DC.x,DC.y,0);brakeG.add(axle);
+ const top=-r*0.55,bot=DC.y;
+ const b1=new THREE.Mesh(new THREE.BoxGeometry(0.9,1,1.6),dark);b1.scale.y=top-bot;b1.position.set(-1,(top+bot)/2,0);brakeG.add(b1);
+ const b2=new THREE.Mesh(new THREE.BoxGeometry(1,1,1.2),dark);b2.scale.x=DC.x+1.4;b2.position.set((DC.x-1.4)/2,DC.y,0);brakeG.add(b2);
+}
+
+function loop(){
+ requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),0.05);
+ if(R.rod){const d=S.targetS-S.s,st=5*dt;S.s+=Math.abs(d)<st?d:Math.sign(d)*st;R.rod.position.x=S.s;
+  const dx=3.8+S.s-R.P.x,dy=-R.P.y;R.armPivot.rotation.z=-Math.atan2(dx,dy);R.arm.scale.y=Math.hypot(dx,dy);R.mark.visible=S.markOn;
+  if(R.sleeve){const tx=S.adj&&!S.adj.locked?0.62:0.92;R.sleeve.position.x+=(tx-R.sleeve.position.x)*0.2;}}
+ if(S.air!==S.airTarget){const st=35*dt,d=S.airTarget-S.air;S.air+=Math.abs(d)<st?d:Math.sign(d)*st;updatePsi();}
+ if(camGoal){camera.position.lerp(camGoal.p,0.08);controls.target.lerp(camGoal.t,0.08);if(camera.position.distanceTo(camGoal.p)<0.02)camGoal=null;}
+ rulerMesh.visible=S.rulerOn;
+ controls.update();renderer.render(scene,camera);
+}
+
+/* ---------- UI helpers ---------- */
+let toastT;
+function toast(msg,kind){const t=$('#toast');t.textContent=msg;t.className='show '+(kind||'');clearTimeout(toastT);toastT=setTimeout(()=>t.className='',3600);}
+function updatePsi(){const p=Math.round(S.air);$('#hPsi').textContent=p+' psi';$('#hBar').style.width=Math.min(100,p/120*100)+'%';}
+function updateHud(){updatePsi();
+ const ch=[['Chocks',S.chocks?'in place':'not set',S.chocks],['Engine',S.engine?'running':'off',!S.engine],['Parking brakes',S.park?'applied':'released',!S.park],['Service brakes',S.applied?'applied':'released',S.applied]];
+ if(S.brake)ch.push(['Slack adjuster',S.brake.slack==='manual'?'manual':'automatic',false]);
+ $('#hChips').innerHTML=ch.map(c=>`<span class="chip ${c[2]?'on':''}">${c[0]}: <b>${c[1]}</b></span>`).join('');}
+function show(name){
+ ['menu','learn','sim'].forEach(n=>$('#'+n).classList.toggle('on',n===name));
+ $('#back').style.display=name==='menu'?'none':'';
+ $('#score').style.display=name==='sim'?'':'none';
+ if(name==='learn')$('#learn').innerHTML=learnHTML();
+ if(name==='sim'&&!renderer)initThree();
+ if(name==='sim')setTimeout(resize,30);
+}
+function setScore(){$('#score').textContent=S.score.total?`Score ${S.score.right}/${S.score.total}`:'';}
+
+/* ---------- Procedure ---------- */
+function resetProc(){
+ S.done={};S.order=shuffle(PROC.map(p=>p.id));S.mistakes=0;S.phase='proc';
+ S.air=40;S.airTarget=40;S.engine=true;S.park=true;S.chocks=false;S.applied=false;S.markOn=false;S.rulerOn=false;
+}
+function loadBrake(b,applied){buildBrake(b.k,b.slack,b.spring);S.s=S.targetS=applied?b.stroke:(S.park&&b.spring?b.stroke:0);}
+function doStep(id){
+ if(S.done[id]||S.phase!=='proc')return;
+ const st=PROC.find(p=>p.id===id);const miss=st.req.find(r=>!S.done[r]);
+ if(miss){S.mistakes++;toast(WHY[id+':'+miss]||('First: '+PROC.find(p=>p.id===miss).label.toLowerCase()+'.'),'bad');render();return;}
+ S.done[id]=true;
+ switch(id){
+  case 'chock':S.chocks=true;break;
+  case 'air':S.airTarget=100;break;
+  case 'engine':S.engine=false;break;
+  case 'park':S.park=false;S.targetS=0;break;
+  case 'mark':S.markOn=true;go('measure');break;
+  case 'apply':S.applied=true;S.airTarget=96;S.targetS=S.brake.stroke;break;
+  case 'measure':S.rulerOn=true;go('measure');onMeasured();break;
+ }
+ updateHud();render();
+}
+function hint(){const n=PROC.find(p=>!S.done[p.id]&&p.req.every(r=>S.done[r]));if(n)toast('Next: '+n.label,'');}
+function procHTML(title){
+ let h=`<h2>${title}</h2><p class="muted">Tap the steps in the correct order.</p><div class="steps">`;
+ S.order.forEach(id=>{const p=PROC.find(x=>x.id===id),d=S.done[id];h+=`<button class="step ${d?'done':''}" data-step="${id}" ${d?'disabled':''}>${d?'✓ ':''}${p.label}</button>`;});
+ return h+`</div><div class="row"><button class="btn ghost" data-act="hint">Hint</button><span class="muted">Mistakes: ${S.mistakes}</span></div>`;
+}
+function onMeasured(){
+ if(S.mode==='measure'){buildQuiz();S.phase='quiz';}
+ else if(S.mode==='vehicle'){S.phase='inspect';toast('Your helper is holding the brakes on. Check each wheel.','good');}
+ else if(S.mode==='adjust'){S.phase='found';}
+}
+function verdictHTML(b){
+ const L=TYPES[b.k].limit;
+ let h=`<div class="verdict ${b.out?'bad':'good'}"><b>${b.out?'OUT of adjustment':'In adjustment'}</b><br>${len(b.stroke)} stroke on a ${typeLabel(b.k)} chamber. Limit: ${len(L)}. `;
+ h+=b.out?`Over by ${len(b.stroke-L)}.`:`${len(L-b.stroke)} under the limit.`;
+ if(b.out)h+=b.slack==='manual'?'<br><br>Manual slack adjuster: adjust it before driving, then re-check the stroke.':'<br><br>Automatic slack adjuster: it should keep itself adjusted, so being out points to a problem. Report it and have it repaired.';
+ return h+'</div>';
+}
+
+/* ---------- Measure mode ---------- */
+function newMeasure(){
+ const k=rnd(Object.keys(TYPES));const spring=!['12','16'].includes(k)&&Math.random()<0.75;
+ const out=Math.random()<0.5;
+ S.brake={k,spring,slack:Math.random()<0.5?'manual':'auto',stroke:randStroke(TYPES[k].limit,out),out};
+ resetProc();loadBrake(S.brake,false);go('home');updateHud();render();
+}
+function buildQuiz(){
+ const b=S.brake,L=TYPES[b.k].limit;
+ const offs=shuffle([-0.375,-0.25,-0.125,0.125,0.25,0.375]).slice(0,3);
+ const reading=shuffle([b.stroke,...offs.map(o=>b.stroke+o).filter(v=>v>0.3)]);
+ const limits=shuffle([L,...shuffle([1.375,1.75,2,2.25,2.5].filter(x=>x!==L)).slice(0,3)]);
+ S.q={reading,limits,a:[null,null,null],correct:[reading.indexOf(b.stroke),limits.indexOf(L),b.out?1:0]};
+}
+function quizHTML(){
+ const q=S.q;
+ const qs=[
+  {t:'1. Read the pushrod stroke on the ruler.',o:q.reading.map(len)},
+  {t:'2. What is the adjustment limit for this chamber? Check the tag.',o:q.limits.map(len)},
+  {t:'3. Is this brake in adjustment?',o:['In adjustment','Out of adjustment']}];
+ let h='<h2>Make the call</h2><p class="muted">Use the view buttons to zoom to the tag or the ruler.</p>';
+ for(let i=0;i<3;i++){
+  if(i>0&&q.a[i-1]===null)break;
+  h+=`<div class="q"><p>${qs[i].t}</p><div class="opts">`;
+  qs[i].o.forEach((o,j)=>{let c='';if(q.a[i]!==null){if(j===q.correct[i])c='right';else if(j===q.a[i])c='wrong';}h+=`<button class="opt ${c}" data-act="q" data-i="${i}" data-j="${j}" ${q.a[i]!==null?'disabled':''}>${o}</button>`;});
+  h+='</div></div>';
+ }
+ if(q.a[2]!==null)h+=verdictHTML(S.brake)+'<button class="btn" data-act="next">Next brake →</button>';
+ return h;
+}
+
+/* ---------- Vehicle mode ---------- */
+const POS=['Steer L','Steer R','Drive 1 L','Drive 1 R','Drive 2 L','Drive 2 R','Trailer 1 L','Trailer 1 R','Trailer 2 L','Trailer 2 R'];
+function newVehicle(){
+ const steerK=rnd(['16','20','24']),driveK=rnd(['30','30LS','24']),trlK=rnd(['30','30LS']);
+ const outN=rnd([0,1,1,2,2,3]);const outIdx=shuffle([...Array(10).keys()]).slice(0,outN);
+ S.veh=POS.map((name,i)=>{const k=i<2?steerK:i<6?driveK:trlK,out=outIdx.includes(i);return{name,k,spring:i>=2,slack:'auto',stroke:randStroke(TYPES[k].limit,out),out,ans:null};});
+ S.sel=2;S.brake=S.veh[2];S.goAns=null;resetProc();loadBrake(S.brake,false);go('home');updateHud();render();
+}
+function selectPos(i){S.sel=i;S.brake=S.veh[i];loadBrake(S.brake,true);S.markOn=true;S.rulerOn=true;go('measure');updateHud();render();}
+function wheelBtn(i){const w=S.veh[i];let c=w.ans==null?'':w.ans?'aout':'ain';if(S.phase==='results')c=w.ans===w.out?'ok':'miss';if(S.sel===i)c+=' sel';
+ return `<button class="wheel ${c}" data-act="pos" data-i="${i}" ${S.phase==='proc'?'disabled':''}>${w.name}</button>`;}
+function truckHTML(){let h='<div class="truck">';
+ [[0,1,'Tractor'],[2,3,''],[4,5,''],[6,7,'Trailer'],[8,9,'']].forEach(([a,b,l],ri)=>{if(ri===3)h+='<div class="gap"></div>';h+=`<div class="axle">${wheelBtn(a)}<div class="beam">${l}</div>${wheelBtn(b)}</div>`;});
+ return h+'</div>';}
+function vehicleHTML(){
+ if(S.phase==='proc')return procHTML('Full truck check')+truckHTML();
+ const w=S.veh[S.sel];
+ if(S.phase==='inspect'){
+  const n=S.veh.filter(x=>x.ans!=null).length;
+  return `<h2>Full truck check</h2><p class="muted">Tap each wheel, read the tag and the ruler, and make the call.</p>${truckHTML()}
+  <div class="q"><p>${w.name} — ${w.ans==null?'not checked yet':'marked '+(w.ans?'OUT':'IN')}</p><div class="opts">
+  <button class="opt ${w.ans===false?'pick':''}" data-act="vans" data-v="0">In adjustment</button><button class="opt ${w.ans===true?'pick':''}" data-act="vans" data-v="1">Out of adjustment</button></div></div>
+  <button class="btn" data-act="finish" ${n===10?'':'disabled'}>Finish inspection (${n}/10)</button>`;
+ }
+ let h=`<h2>Results</h2>${truckHTML()}<table class="res"><tr><th>Wheel</th><th>Chamber</th><th>Stroke</th><th>Limit</th><th>You</th></tr>`;
+ S.veh.forEach(x=>{h+=`<tr><td>${x.name}</td><td>${x.k.replace('LS',' LS')}</td><td style="color:${x.out?'var(--bad)':'inherit'}">${len(x.stroke)}</td><td>${len(TYPES[x.k].limit)}</td><td>${x.ans===x.out?'✓':'✗'}</td></tr>`;});
+ h+='</table>';
+ const outs=S.veh.filter(x=>x.out).length;
+ h+=`<div class="q"><p>Can this truck leave the yard?</p><div class="opts">`;
+ ['Yes','No'].forEach((o,j)=>{const correct=outs?1:0;let c='';if(S.goAns!==null){if(j===correct)c='right';else if(j===S.goAns)c='wrong';}h+=`<button class="opt ${c}" data-act="goq" data-j="${j}" ${S.goAns!==null?'disabled':''}>${o}</button>`;});
+ h+='</div></div>';
+ if(S.goAns!==null){h+=outs?`<div class="verdict bad"><b>No.</b> ${outs} brake${outs>1?'s are':' is'} out of adjustment. Each one has to be repaired or adjusted and re-checked before the trip.</div>`:`<div class="verdict good"><b>Yes.</b> Every brake is within its limit.</div>`;
+  h+='<button class="btn" data-act="next">New truck →</button>';}
+ return h;
+}
+
+/* ---------- Adjust mode ---------- */
+const DEFL=0.875,QT=0.125;
+function newAdjust(){
+ const k=rnd(['30','24']),kq=10+Math.floor(Math.random()*5);
+ S.brake={k,spring:true,slack:'manual',stroke:DEFL+kq*QT,out:true};
+ S.adj={clear:kq*QT,locked:true,contact:false};
+ resetProc();loadBrake(S.brake,false);go('home');updateHud();render();
+}
+function adjustHTML(){
+ const a=S.adj;
+ if(S.phase==='proc')return procHTML('Measure first');
+ if(S.phase==='found')return `<h2>Found it</h2>${verdictHTML(S.brake)}<button class="btn" data-act="release">Release the brake application</button>`;
+ if(S.phase==='adjust'){
+  const qt=Math.round(a.clear/QT);
+  return `<h2>Adjust the slack</h2><p class="muted">Brakes released. Work the adjusting bolt on the slack adjuster.</p>
+  <details><summary>Show the steps</summary><ol><li>Push in the locking sleeve</li><li>Turn the bolt until the shoes contact the drum</li><li>Back off ¼ to ½ turn</li><li>Let the locking sleeve re-engage</li><li>Re-check the stroke</li></ol></details>
+  <div class="ctrls">
+   <button class="opt full ${a.locked?'':'pick'}" data-act="sleeve">${a.locked?'Push in the locking sleeve':'Let the locking sleeve re-engage'}</button>
+   <button class="opt" data-act="tight">Tighten ¼ turn</button><button class="opt" data-act="loose">Loosen ¼ turn</button>
+  </div>
+  <div class="clear">Shoe-to-drum clearance <span class="muted">(shown for learning)</span><div class="bar"><i style="width:${Math.min(100,a.clear/2*100)}%"></i></div>
+  ${a.clear===0?'<b style="color:var(--orange)">Shoes are against the drum</b>':a.contact?`Backed off ${qt} × ¼ turn from contact`:'&nbsp;'}</div>
+  <p class="muted">Locking sleeve: <b>${a.locked?'locked':'pushed in'}</b></p>
+  <button class="btn" data-act="recheck">Re-check the stroke</button>`;
+ }
+ return `<h2>Re-check</h2>${S.adjResult}<button class="btn" data-act="next">New adjustment →</button>`;
+}
+function evalAdjust(){
+ const a=S.adj,c=a.clear,L=TYPES[S.brake.k].limit,st=S.brake.stroke;let ok=false,msg;
+ if(c===0)msg='The shoes are still tight against the drum. This brake will drag and overheat. After contact, back the bolt off ¼ to ½ turn.';
+ else if(!a.contact)msg='You never ran the shoes up to the drum, so the back-off was a guess. Tighten until the shoes contact the drum, then back off ¼ to ½ turn.';
+ else if(c<=0.25){ok=true;msg=`Shoes run up to the drum, then backed off ${c===QT?'¼':'½'} turn and locked. Well done.`;}
+ else if(st<=L)msg='Within the limit, but backed off more than needed, so it will go out of adjustment sooner. Back off only ¼ to ½ turn.';
+ else msg='Still out of adjustment.';
+ S.score.total++;if(ok)S.score.right++;
+ S.adjResult=`<div class="verdict ${ok?'good':'bad'}"><b>${ok?'Good adjustment':'Needs work'}</b><br>New stroke: ${len(st)} (limit ${len(L)}).<br><br>${msg}</div><p class="muted">Procedure mistakes: ${S.mistakes}</p>`;
+}
+
+/* ---------- Render & actions ---------- */
+function render(){
+ let h='';
+ if(S.mode==='measure')h=S.phase==='proc'?procHTML('Measure the stroke'):quizHTML();
+ else if(S.mode==='vehicle')h=vehicleHTML();
+ else if(S.mode==='adjust')h=adjustHTML();
+ $('#panel').innerHTML=h;setScore();
+}
+const ACTS={
+ hint:()=>hint(),
+ q:b=>{const i=+b.dataset.i,j=+b.dataset.j;if(S.q.a[i]!==null)return;S.q.a[i]=j;S.score.total++;if(j===S.q.correct[i])S.score.right++;render();},
+ next:()=>{if(S.mode==='measure')newMeasure();else if(S.mode==='vehicle')newVehicle();else newAdjust();},
+ pos:b=>selectPos(+b.dataset.i),
+ vans:b=>{const w=S.veh[S.sel];w.ans=b.dataset.v==='1';const nx=S.veh.findIndex(x=>x.ans==null);if(nx>=0)selectPos(nx);else render();},
+ finish:()=>{S.veh.forEach(x=>{S.score.total++;if(x.ans===x.out)S.score.right++;});S.phase='results';render();},
+ goq:b=>{if(S.goAns!==null)return;S.goAns=+b.dataset.j;const correct=S.veh.some(x=>x.out)?1:0;S.score.total++;if(S.goAns===correct)S.score.right++;render();},
+ release:()=>{S.applied=false;S.airTarget=100;S.targetS=0;S.rulerOn=false;S.markOn=false;S.phase='adjust';go('slack');updateHud();render();},
+ sleeve:()=>{S.adj.locked=!S.adj.locked;render();},
+ tight:()=>{const a=S.adj;if(a.locked){S.mistakes++;toast('The locking sleeve is engaged. Push it in first or you can damage the slack adjuster.','bad');return;}
+  if(a.clear===0){a.contact=true;toast("The bolt won't turn any further — the shoes are tight against the drum.",'');return;}
+  a.clear-=QT;R.bolt.rotation.x+=Math.PI/2;if(a.clear<=0){a.clear=0;a.contact=true;toast('Shoes contact the drum.','good');}render();},
+ loose:()=>{const a=S.adj;if(a.locked){S.mistakes++;toast('The locking sleeve is engaged. Push it in first.','bad');return;}
+  if(a.clear>=2.5)return;a.clear+=QT;R.bolt.rotation.x-=Math.PI/2;render();},
+ recheck:()=>{const a=S.adj;if(!a.locked){S.mistakes++;toast('Let the locking sleeve re-engage first, or the adjustment can back off.','bad');return;}
+  S.brake.stroke=DEFL+a.clear;S.brake.out=S.brake.stroke>TYPES[S.brake.k].limit;
+  S.markOn=true;S.applied=true;S.airTarget=96;S.rulerOn=true;go('measure');setTimeout(()=>{S.targetS=S.brake.stroke;},500);
+  evalAdjust();S.phase='adjDone';updateHud();render();}
+};
+$('#panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.step)return doStep(b.dataset.step);const f=ACTS[b.dataset.act];if(f)f(b);});
+$('#views').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.view);});
+document.querySelectorAll('[data-go]').forEach(c=>c.addEventListener('click',()=>{
+ const g=c.dataset.go;if(g==='learn'){show('learn');return;}
+ S.mode=g;S.score={right:0,total:0};show('sim');
+ if(g==='measure')newMeasure();else if(g==='vehicle')newVehicle();else newAdjust();
+}));
+$('#back').addEventListener('click',()=>{S.mode=null;show('menu');});
+function setUnitLabel(){$('#unit').textContent='Units: '+unit;}
+$('#unit').addEventListener('click',()=>{unit=unit==='in'?'mm':'in';try{localStorage.setItem('bat_unit',unit)}catch(e){}setUnitLabel();if(renderer)makeRuler();if($('#learn').classList.contains('on'))$('#learn').innerHTML=learnHTML();if(S.mode)render();});
+setUnitLabel();
+
+function learnHTML(){
+ const rows=Object.keys(TYPES).map(k=>`<tr><td>${typeLabel(k)}</td><td>${len(TYPES[k].limit)}</td></tr>`).join('');
+ return `<div class="learn">
+ <h2>What you're checking</h2>
+ <p>Pushrod stroke is how far the pushrod travels out of the brake chamber when the brakes go from released to fully applied. As linings and drums wear, the stroke gets longer. Past the limit, the chamber runs out of travel and can't push the brake as hard. That brake is out of adjustment.</p>
+ <h2>Adjustment limits</h2>
+ <p class="muted">Clamp-type brake chambers. The size is on the chamber tag or stamped on the clamp ring. Long-stroke chambers have a longer limit.</p>
+ <table><tr><th>Chamber</th><th>Max stroke</th></tr>${rows}</table>
+ <h2>Measuring the stroke</h2>
+ <ol><li>Park on level ground and chock the wheels.</li><li>Build air pressure to 90–100 psi.</li><li>Shut off the engine and release the parking brakes.</li><li>Mark the pushrod where it leaves the chamber (chalk or a paint marker).</li><li>Have a helper make and hold a full brake application.</li><li>Measure from the chamber face to the mark. That distance is the stroke.</li><li>Compare it to the limit for that chamber size.</li></ol>
+ <h2>Adjusting a manual slack adjuster</h2>
+ <ol><li>Wheels chocked, brakes released.</li><li>Push in the locking sleeve and put a wrench on the adjusting bolt.</li><li>Turn the bolt until the brake shoes contact the drum. The direction depends on the slack adjuster — watch the slack and the S-cam.</li><li>Back the bolt off ¼ to ½ turn.</li><li>Make sure the locking sleeve comes back out and locks the bolt.</li><li>Re-check the stroke.</li></ol>
+ <h2>Automatic slack adjusters</h2>
+ <p>They're designed to keep the brake in adjustment on their own. One that's out of adjustment usually means something is wrong — a worn or faulty adjuster or a problem in the brake itself. Report it and get it repaired. Adjusting it by hand doesn't fix the cause.</p>
+ <p class="note">Educational learning aid only. Always follow the BC Air Brake Manual, your instructor, and the equipment manufacturer.</p>
+ </div>`;
+}
+})();
+</script>
+</body>
+</html>
